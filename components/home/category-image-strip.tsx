@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { ProductImage } from "@/components/ui/product-image";
 import {
   HOME_CATEGORY_STRIP,
   type HomeCategoryStripItem,
@@ -8,6 +8,18 @@ import {
 interface CategoryImageStripProps {
   items?: HomeCategoryStripItem[] | null;
 }
+
+const CATEGORY_IMAGE_FALLBACK: Record<string, string> = {
+  camera: "/products/sony-a7iii.jpg",
+  lens: "/products/sony-fe-24-70-gm-ii.jpg",
+  gimbal: "/products/dji-rs4-mini.jpg",
+  lighting: "/products/godox-sl60w-led-light.jpg",
+  tripods: "/products/manfrotto-befree-live-tripod.jpg",
+  recorder: "/products/zoom-h6-essential-recorder.jpg",
+  laptop: "/products/macbook-air-m2.jpg",
+  macbook: "/products/macbook-air-m2.jpg",
+  iphone: "/products/iphone-15-pro.jpg",
+};
 
 export function CategoryImageStrip({ items }: CategoryImageStripProps) {
   const categoryItems =
@@ -33,8 +45,12 @@ export function CategoryImageStrip({ items }: CategoryImageStripProps) {
             href={item.href}
             className="group relative overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm transition hover:border-[#93c5fd] hover:shadow-lg"
           >
-            <Image
+            <ProductImage
               src={item.image}
+              fallbackSrc={
+                CATEGORY_IMAGE_FALLBACK[item.slug] ??
+                CATEGORY_IMAGE_FALLBACK.iphone
+              }
               alt={`${item.label} category`}
               width={1000}
               height={700}

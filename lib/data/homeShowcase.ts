@@ -93,14 +93,12 @@ export const HOME_CATEGORY_STRIP: HomeCategoryStripItem[] = [
     label: "MacBook",
     slug: "macbook",
     href: "/category/macbook",
-    image:
-      "https://www.apple.com/v/macbook-air/x/images/meta/macbook_air_mx__ez5y0k5yy7au_og.png?202602101114",
+    image: "/products/macbook-air-m2.jpg",
   },
   {
     label: "iPhone",
     slug: "iphone",
     href: "/category/iphone",
-    image:
-      "https://www.apple.com/v/iphone/home/ci/images/meta/iphone__cud4q04omsuq_og.png?202602092056",
+    image: "/products/iphone-15-pro.jpg",
   },
 ];

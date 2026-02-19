@@ -52,10 +52,20 @@ Important:
 - Storefront: `npm run dev`
 - Studio: `npm run studio:dev`
 
+Hosted admin panel:
+- `https://officialhope.sanity.studio/`
+
 If Studio shows an old browser build/runtime error, clear its cache and restart:
 
 ```bash
 rm -rf sanity/.sanity
+npm run studio:dev
+```
+
+If Studio says `Port 3333 is already in use`, stop the old process and restart:
+
+```bash
+pkill -f "sanity dev"
 npm run studio:dev
 ```
 
