@@ -83,6 +83,23 @@ npm run studio:deploy
 - Publish
 - Storefront updates automatically via ISR revalidation (60 seconds)
 
+## Easy Admin Workflow (Sanity)
+
+- Studio sidebar now has:
+  - `All Products`
+  - `Featured Products`
+  - `Products by Category`
+  - `Homepage Categories`
+- Product editor is grouped into tabs:
+  - `Basics`, `Pricing`, `Details`, `Media`, `Flags`
+- Category editor is grouped into tabs:
+  - `Basics`, `Media`, `Settings`
+- Creating from `Products by Category` pre-fills the category automatically.
+- Product list preview now shows:
+  - brand, price, stock status, and featured status
+- Built-in sort options in Studio:
+  - newest, price low/high, featured first
+
 Product schema fields:
 - `name` (string)
 - `slug` (from name)

@@ -1,5 +1,6 @@
 import { defineConfig } from "sanity";
 import { deskTool } from "sanity/desk";
+import { deskStructure } from "./deskStructure";
 import { resolveStudioSanityEnv } from "./env";
 import { schemaTypes } from "./schemaTypes";
 
@@ -16,7 +17,7 @@ export default defineConfig({
   projectId,
   dataset,
   basePath,
-  plugins: [deskTool()],
+  plugins: [deskTool({ structure: deskStructure })],
   vite: {
     base: viteBase,
   },
