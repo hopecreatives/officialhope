@@ -21,6 +21,13 @@ Run Sanity Studio (admin dashboard):
 npm run studio:dev
 ```
 
+You can also start the admin panel from the `sanity` folder now:
+
+```bash
+cd sanity
+npm run dev
+```
+
 ## Sanity setup
 
 1. Create a Sanity project/dataset (or use an existing one):
@@ -44,6 +51,13 @@ Important:
 3. Start storefront and Studio:
 - Storefront: `npm run dev`
 - Studio: `npm run studio:dev`
+
+If Studio shows an old browser build/runtime error, clear its cache and restart:
+
+```bash
+rm -rf sanity/.sanity
+npm run studio:dev
+```
 
 4. Optional Studio deployment:
 

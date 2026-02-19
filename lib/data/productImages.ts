@@ -1,5 +1,15 @@
 export const FALLBACK_PRODUCT_IMAGE = "/products/fallback-product.jpg";
 
+const PRODUCT_SLUG_ALIASES: Record<string, string> = {
+  "sony-a7iii": "sony-a7-iii",
+  "canon-r6": "canon-eos-r6",
+  "nikon-z6ii": "nikon-z6-ii",
+  "dji-rs4-mini": "dji-rs-4-mini",
+  "dji-rs-4mini": "dji-rs-4-mini",
+  "macbook-air-m-2": "macbook-air-m2",
+  "iphone15-pro": "iphone-15-pro",
+};
+
 export const PRODUCT_IMAGE_MAP: Record<string, string[]> = {
   "sony-a7-iii": [
     "/products/sony-a7iii.jpg", // Replace this with official product image
@@ -123,9 +133,30 @@ export const PRODUCT_IMAGE_MAP: Record<string, string[]> = {
   ],
 };
 
-export const getProductImages = (slug: string) => {
-  const images = PRODUCT_IMAGE_MAP[slug];
+const normalizeSlug = (slug: string) =>
+  slug
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+
+export const getCanonicalProductSlug = (slug: string) => {
+  const normalizedSlug = normalizeSlug(slug);
+  return PRODUCT_SLUG_ALIASES[normalizedSlug] ?? normalizedSlug;
+};
+
+export const getKnownProductImages = (slug: string): string[] | null => {
+  const canonicalSlug = getCanonicalProductSlug(slug);
+  const images = PRODUCT_IMAGE_MAP[canonicalSlug];
   if (!images || images.length === 0) {
+    return null;
+  }
+
+  return images;
+};
+
+export const getProductImages = (slug: string) => {
+  const images = getKnownProductImages(slug);
+  if (!images) {
     return [FALLBACK_PRODUCT_IMAGE, FALLBACK_PRODUCT_IMAGE, FALLBACK_PRODUCT_IMAGE];
   }
 

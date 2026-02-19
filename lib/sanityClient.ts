@@ -15,7 +15,10 @@ import {
   type HomeCategoryStripItem,
 } from "@/lib/data/homeShowcase";
 import { products as fallbackProducts } from "@/lib/data/products";
-import { FALLBACK_PRODUCT_IMAGE } from "@/lib/data/productImages";
+import {
+  FALLBACK_PRODUCT_IMAGE,
+  getKnownProductImages,
+} from "@/lib/data/productImages";
 import type { Product } from "@/types/product";
 
 const projectId = process.env.SANITY_PROJECT_ID;
@@ -194,7 +197,12 @@ const resolveSanityImageUrl = (
     .url();
 };
 
-const mapImages = (images?: SanityProductImage[] | null) => {
+const mapImages = (slug: string, images?: SanityProductImage[] | null) => {
+  const mappedLocalImages = getKnownProductImages(slug);
+  if (mappedLocalImages) {
+    return mappedLocalImages;
+  }
+
   const safeImages = Array.isArray(images) ? images : [];
 
   const resolved = safeImages
@@ -208,10 +216,14 @@ const normalizeProduct = (
   product: SanityProductDocument,
   index: number,
 ): Product | null => {
+  const productName =
+    typeof product.name === "string" ? product.name.trim() : "";
+  const productSlug =
+    typeof product.slug === "string" ? product.slug.trim() : "";
   const category = SANITY_CATEGORY_LABELS[product.category];
   const condition = SANITY_CONDITION_LABELS[product.condition];
 
-  if (!product.name || !product.slug || !category || !condition) {
+  if (!productName || !productSlug || !category || !condition) {
     return null;
   }
 
@@ -222,8 +234,8 @@ const normalizeProduct = (
 
   return {
     id: generatedId,
-    name: product.name.trim(),
-    slug: product.slug.trim(),
+    name: productName,
+    slug: productSlug,
     createdAt: product._createdAt,
     category,
     brand: product.brand?.trim() || "Unknown",
@@ -233,7 +245,7 @@ const normalizeProduct = (
     shortDesc: product.shortDesc?.trim() || "",
     description: product.description?.trim() || "",
     specs: mapSpecs(product.specs),
-    images: mapImages(product.images),
+    images: mapImages(productSlug, product.images),
     featured: Boolean(product.featured),
   };
 };

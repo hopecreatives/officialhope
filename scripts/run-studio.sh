@@ -19,6 +19,13 @@ fi
 
 export SANITY_STUDIO_PROJECT_ID="${SANITY_STUDIO_PROJECT_ID:-${SANITY_PROJECT_ID:-}}"
 export SANITY_STUDIO_DATASET="${SANITY_STUDIO_DATASET:-${SANITY_DATASET:-}}"
+export SANITY_STUDIO_API_VERSION="${SANITY_STUDIO_API_VERSION:-${SANITY_API_VERSION:-2025-01-01}}"
+
+COMMAND="${1:-dev}"
+
+if [[ "$COMMAND" == "dev" ]]; then
+  rm -rf "$ROOT_DIR/sanity/.sanity/vite"
+fi
 
 cd "$ROOT_DIR/sanity"
 sanity "$@"
