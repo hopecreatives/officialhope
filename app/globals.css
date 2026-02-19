@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+:root {
+  --hs-bg: #f8fafc;
+  --hs-panel: #ffffff;
+  --hs-panel-strong: #f1f5f9;
+  --hs-accent: #0b2a4a;
+  --hs-text: #0f172a;
+  --hs-muted: #475569;
+  --hs-border: #e2e8f0;
+}
+
+@theme inline {
+  --color-background: var(--hs-bg);
+  --color-foreground: var(--hs-text);
+  --font-sans: var(--font-inter);
+}
+
+* {
+  border-color: var(--hs-border);
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--hs-bg);
+  color: var(--hs-text);
+}
+
+body {
+  font-family: var(--font-inter), "Inter", "Segoe UI", sans-serif;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease,
+    opacity 180ms ease;
+}
+
+:focus-visible {
+  outline: 2px solid #1e3a8a;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: #dbeafe;
+  color: #0f172a;
+}
+
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+@keyframes heroFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0);
+  }
+}
+
+@keyframes heroGlowPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.hero-particle {
+  position: absolute;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(76, 126, 190, 0.22) 0%, rgba(76, 126, 190, 0) 72%);
+  filter: blur(2px);
+  animation-name: heroFloat;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+.hero-glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(58px);
+  animation: heroGlowPulse 7s ease-in-out infinite;
+}
+
+.hero-glow-left {
+  top: -10%;
+  left: -8%;
+  width: 32rem;
+  height: 32rem;
+  background: radial-gradient(circle, rgba(30, 58, 138, 0.38) 0%, rgba(30, 58, 138, 0) 72%);
+}
+
+.hero-glow-right {
+  right: -4%;
+  bottom: -14%;
+  width: 28rem;
+  height: 28rem;
+  background: radial-gradient(circle, rgba(11, 42, 74, 0.5) 0%, rgba(11, 42, 74, 0) 75%);
+}
+
+.btn-primary-glow {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0b2a4a 100%);
+  box-shadow: 0 10px 25px rgba(30, 58, 138, 0.35);
+}
+
+.btn-primary-glow:hover {
+  box-shadow: 0 14px 32px rgba(30, 58, 138, 0.45);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -1,0 +1,14 @@
+{
+  "name": "hopestore-studio",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "sanity dev",
+    "build": "sanity build",
+    "deploy": "sanity deploy"
+  },
+  "dependencies": {
+    "sanity": "^5.9.0",
+    "styled-components": "^6.1.15"
+  }
+}
