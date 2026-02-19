@@ -1,7 +1,18 @@
 import type { NextConfig } from "next";
 
+const isGithubPagesBuild = process.env.GITHUB_PAGES === "true";
+const githubRepository = process.env.GITHUB_REPOSITORY ?? "";
+const repositoryName = githubRepository.split("/")[1] ?? "";
+const basePath =
+  isGithubPagesBuild && repositoryName ? `/${repositoryName}` : undefined;
+
 const nextConfig: NextConfig = {
+  output: isGithubPagesBuild ? "export" : undefined,
+  trailingSlash: isGithubPagesBuild,
+  basePath,
+  assetPrefix: basePath ? `${basePath}/` : undefined,
   images: {
+    unoptimized: isGithubPagesBuild,
     remotePatterns: [
       {
         protocol: "https",

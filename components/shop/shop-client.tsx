@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CATEGORIES, SHOP_SORT_OPTIONS } from "@/lib/constants/catalog";
 import { formatPriceRWF } from "@/lib/utils/format";
 import type { Product, ProductCategory } from "@/types/product";
@@ -78,6 +79,7 @@ export function ShopClient({
   initialCategory = null,
   forcedCategories = [],
 }: ShopClientProps) {
+  const urlSearchParams = useSearchParams();
   const catalogProducts = useMemo(
     () => normalizeProducts(initialProducts),
     [initialProducts],
@@ -130,6 +132,27 @@ export function ShopClient({
   useEffect(() => {
     setActiveCategory(resolvedInitialCategory);
   }, [resolvedInitialCategory]);
+
+  useEffect(() => {
+    const queryFromUrl = urlSearchParams.get("q") ?? "";
+    const categoryFromUrlRaw = urlSearchParams.get("category");
+    const categoryFromUrl = CATEGORIES.includes(categoryFromUrlRaw as ProductCategory)
+      ? (categoryFromUrlRaw as ProductCategory)
+      : null;
+
+    if (queryFromUrl !== searchText) {
+      setSearchText(queryFromUrl);
+    }
+
+    if (!hasForcedCategoryScope && categoryFromUrl !== activeCategory) {
+      setActiveCategory(categoryFromUrl);
+    }
+  }, [
+    activeCategory,
+    hasForcedCategoryScope,
+    searchText,
+    urlSearchParams,
+  ]);
 
   useEffect(() => {
     if (!isFiltersDrawerOpen) {

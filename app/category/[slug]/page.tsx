@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
   CATEGORY_NAV_ITEMS,
@@ -51,12 +52,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const categoryProducts = await getProductsByCategory(slug);
 
   return (
-    <ShopClient
-      initialProducts={categoryProducts}
-      title={`${item.label} Collection`}
-      description={`Filter ${item.label.toLowerCase()} products by brand, condition, stock status, and price.`}
-      resultLabel={item.label}
-      forcedCategories={item.categories}
-    />
+    <Suspense fallback={<div className="h-24" />}>
+      <ShopClient
+        initialProducts={categoryProducts}
+        title={`${item.label} Collection`}
+        description={`Filter ${item.label.toLowerCase()} products by brand, condition, stock status, and price.`}
+        resultLabel={item.label}
+        forcedCategories={item.categories}
+      />
+    </Suspense>
   );
 }

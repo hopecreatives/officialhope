@@ -4,6 +4,7 @@
 node_modules
 /node_modules
 /sanity/node_modules
+/sanity/dist
 /.pnp
 .pnp.*
 .yarn/*

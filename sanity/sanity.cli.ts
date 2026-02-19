@@ -8,4 +8,7 @@ export default defineCliConfig({
     projectId,
     dataset,
   },
+  deployment: {
+    appId: "a2n4s0pi38wfq8vr03e0omjb",
+  },
 });
