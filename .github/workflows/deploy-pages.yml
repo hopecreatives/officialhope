@@ -35,6 +35,9 @@ jobs:
         env:
           GITHUB_PAGES: "true"
           GITHUB_REPOSITORY: ${{ github.repository }}
+          SANITY_PROJECT_ID: o1tcx883
+          SANITY_DATASET: production
+          SANITY_API_VERSION: 2025-01-01
         run: npm run build
 
       - name: Build Sanity Studio bundle
