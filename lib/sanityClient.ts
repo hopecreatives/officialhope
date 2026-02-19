@@ -255,6 +255,34 @@ const normalizeProducts = (documents: SanityProductDocument[]) =>
     .map((product, index) => normalizeProduct(product, index))
     .filter((product): product is Product => Boolean(product));
 
+const getProductTimestamp = (product: Product) => {
+  const parsedDate = product.createdAt ? Date.parse(product.createdAt) : Number.NaN;
+  if (Number.isFinite(parsedDate)) {
+    return parsedDate;
+  }
+
+  return product.id;
+};
+
+const mergeProductsBySlug = (
+  primaryProducts: Product[],
+  fallbackScope: Product[],
+) => {
+  const bySlug = new Map<string, Product>();
+
+  for (const product of fallbackScope) {
+    bySlug.set(product.slug, product);
+  }
+
+  for (const product of primaryProducts) {
+    bySlug.set(product.slug, product);
+  }
+
+  return Array.from(bySlug.values()).sort(
+    (left, right) => getProductTimestamp(right) - getProductTimestamp(left),
+  );
+};
+
 const normalizeCategoryTile = (
   category: SanityCategoryDocument,
 ): HomeCategoryStripItem | null => {
@@ -314,17 +342,22 @@ export async function getAllProducts(): Promise<Product[]> {
   }
 
   const normalized = normalizeProducts(sanityProducts);
-  return normalized.length > 0 ? normalized : fallbackProducts;
+  if (normalized.length === 0) {
+    return fallbackProducts;
+  }
+
+  return mergeProductsBySlug(normalized, fallbackProducts);
 }
 
 export async function getProductsByCategory(slug: string): Promise<Product[]> {
   const sanityCategories = getSanityCategoryValuesForSlug(slug);
+  const fallbackCategoryProducts = (() => {
+    const categories = getCategoryNavCategories(slug);
+    return fallbackProducts.filter((product) => categories.includes(product.category));
+  })();
 
   if (sanityCategories.length === 0) {
-    const categories = getCategoryNavCategories(slug);
-    return fallbackProducts.filter((product) =>
-      categories.includes(product.category),
-    );
+    return fallbackCategoryProducts;
   }
 
   const sanityProducts = await runQuery<SanityProductDocument[]>(
@@ -333,13 +366,15 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
   );
 
   if (!sanityProducts) {
-    const categories = getCategoryNavCategories(slug);
-    return fallbackProducts.filter((product) =>
-      categories.includes(product.category),
-    );
+    return fallbackCategoryProducts;
   }
 
-  return normalizeProducts(sanityProducts);
+  const normalized = normalizeProducts(sanityProducts);
+  if (normalized.length === 0) {
+    return fallbackCategoryProducts;
+  }
+
+  return mergeProductsBySlug(normalized, fallbackCategoryProducts);
 }
 
 export async function getHomeCategories(): Promise<HomeCategoryStripItem[]> {
