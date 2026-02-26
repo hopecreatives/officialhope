@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "bash ../scripts/run-studio.sh dev",
     "build": "bash ../scripts/run-studio.sh build",
-    "deploy": "bash ../scripts/run-studio.sh deploy"
+    "deploy": "bash ../scripts/run-studio.sh deploy",
+    "seed-templates": "bash ../scripts/run-studio.sh exec ../scripts/seed-template-overrides.mjs --with-user-token"
   },
   "dependencies": {
     "sanity": "^5.9.0",

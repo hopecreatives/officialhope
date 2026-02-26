@@ -21,6 +21,18 @@ Run Sanity Studio (admin dashboard):
 npm run studio:dev
 ```
 
+Create template override documents (one-time, so every template product is editable in Studio):
+
+```bash
+npm run studio:seed-templates
+```
+
+If prompted, login first:
+
+```bash
+npx sanity@latest login
+```
+
 You can also start the admin panel from the `sanity` folder now:
 
 ```bash
@@ -69,6 +81,12 @@ pkill -f "sanity dev"
 npm run studio:dev
 ```
 
+If you can open Studio but cannot save/publish:
+- Confirm you are logged into the correct Sanity account: `npx sanity@latest login`
+- Confirm `SANITY_PROJECT_ID` in `.env.local` is your own project id
+- In Sanity Manage, give your user `Administrator` or `Editor` role on that project
+- Then restart Studio and retry publish
+
 4. Optional Studio deployment:
 
 ```bash
@@ -99,11 +117,12 @@ npm run studio:deploy
 - Product list preview now shows:
   - brand, price, stock status, and featured status
 - To change template product names/photos without coding:
+  - Run `npm run studio:seed-templates` once
   - Open `Template Product Overrides`
-  - Create a new document
-  - Select `Template Product`
+  - Open any seeded template document
   - Upload `Override Images` and/or set `Override Name`
   - Publish
+- If you prefer manual creation, you can still create a new `Template Product Override` document and select `Template Product`.
 - Built-in sort options in Studio:
   - newest, price low/high, featured first
 

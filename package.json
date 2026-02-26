@@ -9,7 +9,8 @@
     "lint": "eslint",
     "studio:dev": "bash ./scripts/run-studio.sh dev",
     "studio:build": "bash ./scripts/run-studio.sh build",
-    "studio:deploy": "bash ./scripts/run-studio.sh deploy"
+    "studio:deploy": "bash ./scripts/run-studio.sh deploy",
+    "studio:seed-templates": "bash ./scripts/run-studio.sh exec ../scripts/seed-template-overrides.mjs --with-user-token"
   },
   "dependencies": {
     "@sanity/client": "^7.14.1",
