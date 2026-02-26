@@ -88,6 +88,7 @@ npm run studio:deploy
 - Studio sidebar now has:
   - `All Products`
   - `Featured Products`
+  - `Template Product Overrides`
   - `Products by Category`
   - `Homepage Categories`
 - Product editor is grouped into tabs:
@@ -97,6 +98,12 @@ npm run studio:deploy
 - Creating from `Products by Category` pre-fills the category automatically.
 - Product list preview now shows:
   - brand, price, stock status, and featured status
+- To change template product names/photos without coding:
+  - Open `Template Product Overrides`
+  - Create a new document
+  - Select `Template Product`
+  - Upload `Override Images` and/or set `Override Name`
+  - Publish
 - Built-in sort options in Studio:
   - newest, price low/high, featured first
 

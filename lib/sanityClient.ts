@@ -17,6 +17,7 @@ import {
 import { products as fallbackProducts } from "@/lib/data/products";
 import {
   FALLBACK_PRODUCT_IMAGE,
+  getCanonicalProductSlug,
   getKnownProductImages,
 } from "@/lib/data/productImages";
 import type { Product } from "@/types/product";
@@ -71,6 +72,26 @@ const PRODUCT_PROJECTION = `{
 const ALL_PRODUCTS_QUERY = `*[_type == "product" && defined(slug.current)] | order(_createdAt desc) ${PRODUCT_PROJECTION}`;
 const PRODUCTS_BY_CATEGORY_QUERY = `*[_type == "product" && defined(slug.current) && category in $categories] | order(_createdAt desc) ${PRODUCT_PROJECTION}`;
 const PRODUCT_BY_SLUG_QUERY = `*[_type == "product" && slug.current == $slug][0] ${PRODUCT_PROJECTION}`;
+const TEMPLATE_PRODUCT_OVERRIDE_PROJECTION = `{
+  _id,
+  _updatedAt,
+  templateSlug,
+  enabled,
+  name,
+  brand,
+  condition,
+  priceRWF,
+  inStock,
+  featured,
+  shortDesc,
+  description,
+  specs,
+  images[]{
+    ...,
+    alt
+  }
+}`;
+const TEMPLATE_PRODUCT_OVERRIDES_QUERY = `*[_type == "templateProduct" && defined(templateSlug)] | order(_updatedAt desc) ${TEMPLATE_PRODUCT_OVERRIDE_PROJECTION}`;
 const CATEGORY_PROJECTION = `{
   _id,
   title,
@@ -117,6 +138,37 @@ interface SanityCategoryDocument {
   slug?: string | null;
   order?: number | null;
   image?: SanityProductImage | null;
+}
+
+interface SanityTemplateProductDocument {
+  _id: string;
+  _updatedAt: string;
+  templateSlug?: string | null;
+  enabled?: boolean | null;
+  name?: string | null;
+  brand?: string | null;
+  condition?: SanityProductCondition | null;
+  priceRWF?: number | null;
+  inStock?: boolean | null;
+  featured?: boolean | null;
+  shortDesc?: string | null;
+  description?: string | null;
+  specs?: string[] | null;
+  images?: SanityProductImage[] | null;
+}
+
+interface TemplateProductOverride {
+  templateSlug: string;
+  name?: string;
+  brand?: string;
+  condition?: "New" | "Used";
+  priceRWF?: number;
+  inStock?: boolean;
+  featured?: boolean;
+  shortDesc?: string;
+  description?: string;
+  specs?: Product["specs"];
+  images?: string[];
 }
 
 const CATEGORY_ROUTE_ALIAS: Record<string, string> = {
@@ -198,18 +250,22 @@ const resolveSanityImageUrl = (
 };
 
 const mapImages = (slug: string, images?: SanityProductImage[] | null) => {
-  const mappedLocalImages = getKnownProductImages(slug);
-  if (mappedLocalImages) {
-    return mappedLocalImages;
-  }
-
   const safeImages = Array.isArray(images) ? images : [];
 
   const resolved = safeImages
     .map((image) => resolveSanityImageUrl(image, 1600))
     .filter((image): image is string => Boolean(image));
 
-  return resolved.length > 0 ? resolved : [FALLBACK_PRODUCT_IMAGE];
+  if (resolved.length > 0) {
+    return resolved;
+  }
+
+  const mappedLocalImages = getKnownProductImages(slug);
+  if (mappedLocalImages) {
+    return mappedLocalImages;
+  }
+
+  return [FALLBACK_PRODUCT_IMAGE];
 };
 
 const normalizeProduct = (
@@ -283,6 +339,130 @@ const mergeProductsBySlug = (
   );
 };
 
+const mapTemplateOverrideImages = (images?: SanityProductImage[] | null) => {
+  const safeImages = Array.isArray(images) ? images : [];
+
+  const resolved = safeImages
+    .map((image) => resolveSanityImageUrl(image, 1600))
+    .filter((image): image is string => Boolean(image));
+
+  return resolved.length > 0 ? resolved : undefined;
+};
+
+const normalizeTemplateProductOverride = (
+  document: SanityTemplateProductDocument,
+): TemplateProductOverride | null => {
+  if (document.enabled === false) {
+    return null;
+  }
+
+  const rawSlug =
+    typeof document.templateSlug === "string" ? document.templateSlug.trim() : "";
+  if (!rawSlug) {
+    return null;
+  }
+
+  const templateSlug = getCanonicalProductSlug(rawSlug);
+  const condition =
+    document.condition && SANITY_CONDITION_LABELS[document.condition]
+      ? SANITY_CONDITION_LABELS[document.condition]
+      : undefined;
+
+  const normalizedName =
+    typeof document.name === "string" && document.name.trim().length > 0
+      ? document.name.trim()
+      : undefined;
+  const normalizedBrand =
+    typeof document.brand === "string" && document.brand.trim().length > 0
+      ? document.brand.trim()
+      : undefined;
+  const normalizedShortDesc =
+    typeof document.shortDesc === "string" && document.shortDesc.trim().length > 0
+      ? document.shortDesc.trim()
+      : undefined;
+  const normalizedDescription =
+    typeof document.description === "string" &&
+    document.description.trim().length > 0
+      ? document.description.trim()
+      : undefined;
+  const normalizedPrice =
+    typeof document.priceRWF === "number" && Number.isFinite(document.priceRWF)
+      ? document.priceRWF
+      : undefined;
+  const normalizedInStock =
+    typeof document.inStock === "boolean" ? document.inStock : undefined;
+  const normalizedFeatured =
+    typeof document.featured === "boolean" ? document.featured : undefined;
+  const normalizedSpecs = mapSpecs(document.specs);
+  const normalizedImages = mapTemplateOverrideImages(document.images);
+
+  return {
+    templateSlug,
+    name: normalizedName,
+    brand: normalizedBrand,
+    condition,
+    priceRWF: normalizedPrice,
+    inStock: normalizedInStock,
+    featured: normalizedFeatured,
+    shortDesc: normalizedShortDesc,
+    description: normalizedDescription,
+    specs: normalizedSpecs.length > 0 ? normalizedSpecs : undefined,
+    images: normalizedImages,
+  };
+};
+
+const applyTemplateOverride = (
+  product: Product,
+  override: TemplateProductOverride,
+): Product => {
+  const nextName = override.name ?? product.name;
+  const nextBrand = override.brand ?? product.brand;
+  const nextCondition = override.condition ?? product.condition;
+  const nextPriceRWF =
+    typeof override.priceRWF === "number" ? override.priceRWF : product.priceRWF;
+  const nextInStock =
+    typeof override.inStock === "boolean" ? override.inStock : product.inStock;
+  const nextFeatured =
+    typeof override.featured === "boolean" ? override.featured : product.featured;
+  const nextShortDesc = override.shortDesc ?? product.shortDesc;
+  const nextDescription = override.description ?? product.description;
+  const nextSpecs = override.specs ?? product.specs;
+  const nextImages = override.images ?? product.images;
+
+  return {
+    ...product,
+    name: nextName,
+    brand: nextBrand,
+    condition: nextCondition,
+    priceRWF: nextPriceRWF,
+    inStock: nextInStock,
+    featured: nextFeatured,
+    shortDesc: nextShortDesc,
+    description: nextDescription,
+    specs: nextSpecs,
+    images: nextImages,
+  };
+};
+
+const applyTemplateOverrides = (
+  products: Product[],
+  overrideMap: Map<string, TemplateProductOverride>,
+) => {
+  if (overrideMap.size === 0) {
+    return products;
+  }
+
+  return products.map((product) => {
+    const canonicalSlug = getCanonicalProductSlug(product.slug);
+    const override = overrideMap.get(canonicalSlug);
+    if (!override) {
+      return product;
+    }
+
+    return applyTemplateOverride(product, override);
+  });
+};
+
 const normalizeCategoryTile = (
   category: SanityCategoryDocument,
 ): HomeCategoryStripItem | null => {
@@ -334,22 +514,50 @@ const runQuery = async <T>(query: string, params: Record<string, unknown> = {}) 
   }
 };
 
+const getTemplateProductOverridesMap = async () => {
+  const documents = await runQuery<SanityTemplateProductDocument[]>(
+    TEMPLATE_PRODUCT_OVERRIDES_QUERY,
+  );
+
+  if (!Array.isArray(documents) || documents.length === 0) {
+    return new Map<string, TemplateProductOverride>();
+  }
+
+  const bySlug = new Map<string, TemplateProductOverride>();
+
+  for (const document of documents) {
+    const normalized = normalizeTemplateProductOverride(document);
+    if (!normalized || bySlug.has(normalized.templateSlug)) {
+      continue;
+    }
+
+    bySlug.set(normalized.templateSlug, normalized);
+  }
+
+  return bySlug;
+};
+
 export async function getAllProducts(): Promise<Product[]> {
+  const templateOverrideMap = await getTemplateProductOverridesMap();
   const sanityProducts = await runQuery<SanityProductDocument[]>(ALL_PRODUCTS_QUERY);
 
   if (!sanityProducts) {
-    return fallbackProducts;
+    return applyTemplateOverrides(fallbackProducts, templateOverrideMap);
   }
 
   const normalized = normalizeProducts(sanityProducts);
   if (normalized.length === 0) {
-    return fallbackProducts;
+    return applyTemplateOverrides(fallbackProducts, templateOverrideMap);
   }
 
-  return mergeProductsBySlug(normalized, fallbackProducts);
+  return applyTemplateOverrides(
+    mergeProductsBySlug(normalized, fallbackProducts),
+    templateOverrideMap,
+  );
 }
 
 export async function getProductsByCategory(slug: string): Promise<Product[]> {
+  const templateOverrideMap = await getTemplateProductOverridesMap();
   const sanityCategories = getSanityCategoryValuesForSlug(slug);
   const fallbackCategoryProducts = (() => {
     const categories = getCategoryNavCategories(slug);
@@ -357,7 +565,7 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
   })();
 
   if (sanityCategories.length === 0) {
-    return fallbackCategoryProducts;
+    return applyTemplateOverrides(fallbackCategoryProducts, templateOverrideMap);
   }
 
   const sanityProducts = await runQuery<SanityProductDocument[]>(
@@ -366,15 +574,18 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
   );
 
   if (!sanityProducts) {
-    return fallbackCategoryProducts;
+    return applyTemplateOverrides(fallbackCategoryProducts, templateOverrideMap);
   }
 
   const normalized = normalizeProducts(sanityProducts);
   if (normalized.length === 0) {
-    return fallbackCategoryProducts;
+    return applyTemplateOverrides(fallbackCategoryProducts, templateOverrideMap);
   }
 
-  return mergeProductsBySlug(normalized, fallbackCategoryProducts);
+  return applyTemplateOverrides(
+    mergeProductsBySlug(normalized, fallbackCategoryProducts),
+    templateOverrideMap,
+  );
 }
 
 export async function getHomeCategories(): Promise<HomeCategoryStripItem[]> {
@@ -403,14 +614,26 @@ export async function getHomeCategories(): Promise<HomeCategoryStripItem[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const templateOverrideMap = await getTemplateProductOverridesMap();
   const sanityProduct = await runQuery<SanityProductDocument | null>(
     PRODUCT_BY_SLUG_QUERY,
     { slug },
   );
 
   if (!sanityProduct) {
-    return fallbackProducts.find((product) => product.slug === slug) ?? null;
+    const fallbackProduct =
+      fallbackProducts.find((product) => product.slug === slug) ?? null;
+    if (!fallbackProduct) {
+      return null;
+    }
+
+    return applyTemplateOverrides([fallbackProduct], templateOverrideMap)[0] ?? null;
   }
 
-  return normalizeProduct(sanityProduct, 0);
+  const normalized = normalizeProduct(sanityProduct, 0);
+  if (!normalized) {
+    return null;
+  }
+
+  return applyTemplateOverrides([normalized], templateOverrideMap)[0] ?? null;
 }

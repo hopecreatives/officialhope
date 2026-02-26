@@ -1,7 +1,7 @@
 import type { StructureResolver } from "sanity/structure";
 import { SANITY_PRODUCT_CATEGORY_OPTIONS } from "./schemaTypes/product";
 
-const MANAGED_TYPES = new Set(["product", "category"]);
+const MANAGED_TYPES = new Set(["product", "category", "templateProduct"]);
 
 export const deskStructure: StructureResolver = (S) =>
   S.list()
@@ -21,6 +21,13 @@ export const deskStructure: StructureResolver = (S) =>
             .title("Featured Products")
             .filter('_type == "product" && featured == true')
             .defaultOrdering([{ field: "_createdAt", direction: "desc" }]),
+        ),
+      S.listItem()
+        .title("Template Product Overrides")
+        .child(
+          S.documentTypeList("templateProduct")
+            .title("Template Product Overrides")
+            .defaultOrdering([{ field: "_updatedAt", direction: "desc" }]),
         ),
       S.listItem()
         .title("Products by Category")
