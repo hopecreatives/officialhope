@@ -599,11 +599,11 @@ export function ShopClient({
   return (
     <>
       <div className="space-y-8">
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm md:p-6">
           <h1 className="text-3xl font-semibold tracking-tight text-[#0f172a] md:text-4xl">
             {title}
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#475569]">
+          <p className="mt-2 max-w-2xl text-sm text-[#475569]">
             {description}
           </p>
         </section>
@@ -671,9 +671,6 @@ export function ShopClient({
             {visibleProducts.length === 0 ? (
               <div className="rounded-xl border border-[#e2e8f0] bg-white p-8 text-center">
                 <p className="text-[#0f172a]">No products match your filters.</p>
-                <p className="mt-2 text-sm text-[#64748b]">
-                  Adjust the filters and try again.
-                </p>
               </div>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

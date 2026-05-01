@@ -23,7 +23,7 @@ export default async function ShopPage() {
       <ShopClient
         initialProducts={products}
         title="Shop Camera Gear & Electronics"
-        description="Refine the catalog by brand, condition, availability, and price to find the right gear quickly."
+        description="Filter by brand, stock, and price."
         resultLabel="All Products"
       />
     </Suspense>

@@ -19,12 +19,6 @@ const PARTICLES = [
   { left: "88%", top: "28%", size: 130, delay: "2.6s", duration: "12s" },
 ] as const;
 
-const TRUST_BADGES = [
-  "12-Month Warranty",
-  "Trusted Local Seller",
-  "Fast Kigali Delivery",
-] as const;
-
 interface HomeHeroSliderProps {
   products: Product[];
 }
@@ -109,8 +103,8 @@ export function HomeHeroSlider({ products }: HomeHeroSliderProps) {
         ))}
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 py-7 md:py-10">
-        <div className="relative min-h-[510px] md:min-h-[560px]">
+      <div className="relative mx-auto max-w-7xl px-4 py-6 md:py-8">
+        <div className="relative min-h-[420px] md:min-h-[520px]">
           {slides.map((slide, index) => {
             const isActive = index === activeSlide;
             const productImages =
@@ -128,22 +122,22 @@ export function HomeHeroSlider({ products }: HomeHeroSliderProps) {
                 } transition-opacity duration-700`}
                 aria-hidden={!isActive}
               >
-                <div className="z-10 max-w-xl rounded-2xl border border-[#344258] bg-[#0f1722]/70 p-6 shadow-xl backdrop-blur md:p-8">
-                  <span className="inline-flex rounded-full border border-[#6a81a1] bg-[#0f2134] px-3 py-1 text-xs font-semibold tracking-[0.18em] text-[#d6e7f8]">
+                <div className="z-10 max-w-xl rounded-2xl border border-[#344258] bg-[#0f1722]/70 p-5 shadow-xl backdrop-blur md:p-7">
+                  <span className="inline-flex rounded-full border border-[#6a81a1] bg-[#0f2134] px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-[#d6e7f8]">
                     {slide.badge}
                   </span>
 
-                  <h2 className="mt-4 text-3xl font-bold leading-tight text-white md:text-5xl">
+                  <h2 className="mt-3 text-3xl font-bold leading-tight text-white md:text-5xl">
                     {slide.title}
                   </h2>
-                  <p className="mt-4 text-sm leading-7 text-[#c4d4e5] md:text-base">
+                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#c4d4e5] md:text-base">
                     {slide.tagline}
                   </p>
-                  <p className="mt-4 text-lg font-semibold text-[#e4edf8]">
+                  <p className="mt-3 text-lg font-semibold text-[#e4edf8]">
                     {formatPriceRWF(slide.product.priceRWF)}
                   </p>
 
-                  <div className="mt-6 flex flex-wrap gap-3">
+                  <div className="mt-5 flex flex-wrap gap-3">
                     <Link
                       href={slide.shopHref}
                       className="btn-primary-glow rounded-xl px-6 py-3 text-sm font-semibold text-white"
@@ -159,17 +153,6 @@ export function HomeHeroSlider({ products }: HomeHeroSliderProps) {
                       Buy via WhatsApp
                     </a>
                   </div>
-
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {TRUST_BADGES.map((badge) => (
-                      <span
-                        key={badge}
-                        className="rounded-full border border-[#3b4d64] bg-[#111b29] px-3 py-1 text-xs font-medium text-[#d2e2f3]"
-                      >
-                        {badge}
-                      </span>
-                    ))}
-                  </div>
                 </div>
 
                 <div className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-[#324056] bg-[#111c2a] shadow-[0_0_75px_rgba(26,68,115,0.28)]">
@@ -179,7 +162,7 @@ export function HomeHeroSlider({ products }: HomeHeroSliderProps) {
                     width={1600}
                     height={1200}
                     priority={index === 0}
-                    className="h-[260px] w-full bg-white object-cover md:h-[520px]"
+                    className="h-[240px] w-full bg-white object-cover md:h-[520px]"
                   />
                   <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0f1115] to-transparent" />
                 </div>

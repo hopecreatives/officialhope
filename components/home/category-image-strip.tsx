@@ -27,14 +27,11 @@ export function CategoryImageStrip({ items }: CategoryImageStripProps) {
 
   return (
     <section>
-      <div className="mb-5 flex items-end justify-between">
+      <div className="mb-4 flex items-end justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-[#0f172a] md:text-3xl">
             Shop By Category
           </h2>
-          <p className="mt-2 text-sm text-[#64748b] md:text-base">
-            Explore core product families with fast access to each department.
-          </p>
         </div>
       </div>
 

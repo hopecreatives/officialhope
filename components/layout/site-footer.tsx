@@ -15,15 +15,13 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 md:grid-cols-3">
         <div>
           <h2 className="text-lg font-semibold text-[#0b2a4a]">{STORE_NAME}</h2>
-          <p className="mt-3 max-w-sm text-sm leading-6 text-[#475569]">
-            Premium camera gear and electronics for creators, professionals, and businesses across Rwanda.
-          </p>
+          <p className="mt-3 max-w-sm text-sm text-[#475569]">Camera gear and electronics with clear pricing.</p>
           <p className="mt-4 text-sm text-[#1e3a8a]">{STORE_DOMAIN}</p>
         </div>
 
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wide text-[#64748b]">
-            Quick links
+            Browse
           </h3>
           <ul className="mt-3 space-y-2">
             {quickLinks.map((item) => (
@@ -40,21 +38,21 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-[#64748b]">Contacts</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-[#64748b]">Contact</h3>
           <ul className="mt-3 space-y-2 text-sm text-[#334155]">
             <li>
               <a href={`tel:${STORE_PHONE_LOCAL}`} className="transition hover:text-[#1e3a8a]">
-                WhatsApp/Phone: {STORE_PHONE_LOCAL}
+                {STORE_PHONE_LOCAL}
               </a>
             </li>
             <li>
               <a href={`mailto:${STORE_EMAIL}`} className="transition hover:text-[#1e3a8a]">
-                Email: {STORE_EMAIL}
+                {STORE_EMAIL}
               </a>
             </li>
           </ul>
           <h4 className="mt-5 text-xs font-semibold uppercase tracking-wide text-[#64748b]">
-            Popular categories
+            Categories
           </h4>
           <div className="mt-3 flex flex-wrap gap-2">
             {CATEGORIES.map((category) => (

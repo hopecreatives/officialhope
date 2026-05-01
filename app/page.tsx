@@ -58,7 +58,7 @@ export default async function HomePage() {
         <section>
           <SectionHeading
             title="New Listings"
-            subtitle="Latest arrivals across cameras, accessories, and Apple devices."
+            subtitle="Latest gear in stock."
           />
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {newListings.map((product) => (
@@ -70,7 +70,7 @@ export default async function HomePage() {
         <section>
           <SectionHeading
             title="Featured Products"
-            subtitle="Top picks from cameras, audio, stabilization, and Apple devices."
+            subtitle="Picked for you."
           />
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {featuredProducts.map((product) => (

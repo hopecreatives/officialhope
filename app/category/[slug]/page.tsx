@@ -33,8 +33,8 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${item.label} Collection`,
-    description: `Browse ${item.label.toLowerCase()} products available on ${STORE_NAME}.`,
+    title: item.label,
+    description: `Browse ${item.label.toLowerCase()} gear on ${STORE_NAME}.`,
     alternates: {
       canonical: `${STORE_URL}/category/${item.slug}`,
     },
@@ -55,8 +55,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     <Suspense fallback={<div className="h-24" />}>
       <ShopClient
         initialProducts={categoryProducts}
-        title={`${item.label} Collection`}
-        description={`Filter ${item.label.toLowerCase()} products by brand, condition, stock status, and price.`}
+        title={item.label}
+        description={`Filter ${item.label.toLowerCase()} gear fast.`}
         resultLabel={item.label}
         forcedCategories={item.categories}
       />
