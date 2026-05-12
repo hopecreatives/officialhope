@@ -79,6 +79,14 @@ export const productSchema = defineType({
       validation: (rule) => rule.required().min(2),
     }),
     defineField({
+      name: "title",
+      title: "Legacy Title",
+      type: "string",
+      description: "Older products may use this field. Name remains preferred.",
+      group: "basics",
+      hidden: ({ document }) => Boolean(document?.name),
+    }),
+    defineField({
       name: "slug",
       title: "Slug",
       type: "slug",
@@ -133,6 +141,14 @@ export const productSchema = defineType({
       validation: (rule) => rule.required().min(0),
     }),
     defineField({
+      name: "price",
+      title: "Legacy Price",
+      type: "number",
+      description: "Older products may use this field. Price (RWF) remains preferred.",
+      group: "pricing",
+      hidden: ({ document }) => typeof document?.priceRWF === "number",
+    }),
+    defineField({
       name: "inStock",
       title: "In Stock",
       type: "boolean",
@@ -177,10 +193,46 @@ export const productSchema = defineType({
       },
     }),
     defineField({
+      name: "mainImage",
+      title: "Main Image",
+      type: "image",
+      description: "Older products may use this field. It still appears first on the website.",
+      group: "media",
+      options: { hotspot: true },
+      fields: [
+        defineField({
+          name: "alt",
+          title: "Alt Text",
+          type: "string",
+          description: "Describe the image for accessibility and SEO.",
+        }),
+      ],
+    }),
+    defineField({
+      name: "gallery",
+      title: "Legacy Gallery",
+      type: "array",
+      description: "Older products may use this gallery. Images below remain preferred.",
+      group: "media",
+      of: [
+        defineArrayMember({
+          type: "image",
+          options: { hotspot: true },
+          fields: [
+            defineField({
+              name: "alt",
+              title: "Alt Text",
+              type: "string",
+            }),
+          ],
+        }),
+      ],
+    }),
+    defineField({
       name: "images",
       title: "Images",
       type: "array",
-      description: "First image is used as main product image on cards and details.",
+      description: "First image is used after Main Image on cards and details.",
       group: "media",
       of: [
         defineArrayMember({
@@ -197,28 +249,32 @@ export const productSchema = defineType({
           ],
         }),
       ],
-      validation: (rule) => rule.min(1),
     }),
   ],
   preview: {
     select: {
-      title: "name",
+      name: "name",
+      legacyTitle: "title",
       brand: "brand",
-      price: "priceRWF",
+      priceRWF: "priceRWF",
+      legacyPrice: "price",
       inStock: "inStock",
       featured: "featured",
+      mainImage: "mainImage",
       media: "images.0",
     },
-    prepare({ title, brand, price, inStock, featured, media }) {
+    prepare({ name, legacyTitle, brand, priceRWF, legacyPrice, inStock, featured, mainImage, media }) {
+      const title = name || legacyTitle || "Untitled product";
+      const price = typeof priceRWF === "number" ? priceRWF : legacyPrice;
       const formattedPrice =
         typeof price === "number" ? `${price.toLocaleString()} RWF` : "No price";
       const stockText = inStock ? "In stock" : "Out of stock";
       const featuredText = featured ? " • Featured" : "";
 
       return {
-        title: title || "Untitled product",
+        title,
         subtitle: `${brand || "Unknown brand"} • ${formattedPrice} • ${stockText}${featuredText}`,
-        media,
+        media: mainImage || media,
       };
     },
   },

@@ -29,7 +29,11 @@ const readEnv = (...keys: string[]) => {
     for (const source of sources) {
       const value = source[key];
       if (typeof value === "string" && value.trim().length > 0) {
-        return value.trim();
+        return value
+          .trim()
+          .replace(/^['"]|['"]$/g, "")
+          .replace(/\\n/g, "")
+          .trim();
       }
     }
   }

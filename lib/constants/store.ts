@@ -1,6 +1,6 @@
-export const STORE_NAME = "OfficialHope";
-export const STORE_DOMAIN = "officialhope.com";
-export const STORE_URL = "https://officialhope.com";
+export const STORE_NAME = "OfficialHopeStore";
+export const STORE_DOMAIN = "officialhopestore.com";
+export const STORE_URL = "https://officialhopestore.com";
 
 export const STORE_PHONE_LOCAL = "0782487331";
 export const STORE_PHONE_INTL = "250782487331";

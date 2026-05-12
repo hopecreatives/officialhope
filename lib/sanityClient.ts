@@ -22,9 +22,14 @@ import {
 } from "@/lib/data/productImages";
 import type { Product } from "@/types/product";
 
-const projectId = process.env.SANITY_PROJECT_ID;
-const dataset = process.env.SANITY_DATASET;
-const apiVersion = process.env.SANITY_API_VERSION;
+const sanitizeEnvValue = (value?: string) =>
+  typeof value === "string"
+    ? value.trim().replace(/^['"]|['"]$/g, "").replace(/\\n/g, "").trim()
+    : "";
+
+const projectId = sanitizeEnvValue(process.env.SANITY_PROJECT_ID);
+const dataset = sanitizeEnvValue(process.env.SANITY_DATASET);
+const apiVersion = sanitizeEnvValue(process.env.SANITY_API_VERSION);
 
 const isPlaceholderProjectId =
   projectId === "your-project-id" || projectId === "your_project_id";
@@ -53,16 +58,28 @@ const PRODUCT_PROJECTION = `{
   _id,
   _createdAt,
   name,
+  title,
   "slug": slug.current,
   category,
+  "categorySlug": category->slug.current,
+  "categoryTitle": category->title,
   brand,
   condition,
+  price,
   priceRWF,
   inStock,
   featured,
   shortDesc,
   description,
   specs,
+  mainImage{
+    ...,
+    alt
+  },
+  gallery[]{
+    ...,
+    alt
+  },
   images[]{
     ...,
     alt
@@ -70,7 +87,16 @@ const PRODUCT_PROJECTION = `{
 }`;
 
 const ALL_PRODUCTS_QUERY = `*[_type == "product" && defined(slug.current)] | order(_createdAt desc) ${PRODUCT_PROJECTION}`;
-const PRODUCTS_BY_CATEGORY_QUERY = `*[_type == "product" && defined(slug.current) && category in $categories] | order(_createdAt desc) ${PRODUCT_PROJECTION}`;
+const PRODUCTS_BY_CATEGORY_QUERY = `*[
+  _type == "product" &&
+  defined(slug.current) &&
+  (
+    category in $categories ||
+    category._ref in $categoryRefs ||
+    category->slug.current in $categories ||
+    lower(category->title) in $categoryTitles
+  )
+] | order(_createdAt desc) ${PRODUCT_PROJECTION}`;
 const PRODUCT_BY_SLUG_QUERY = `*[_type == "product" && slug.current == $slug][0] ${PRODUCT_PROJECTION}`;
 const TEMPLATE_PRODUCT_OVERRIDE_PROJECTION = `{
   _id,
@@ -115,20 +141,31 @@ interface SanityProductImage {
   };
 }
 
+interface SanityCategoryReference {
+  _type: "reference";
+  _ref: string;
+}
+
 interface SanityProductDocument {
   _id: string;
   _createdAt: string;
-  name: string;
+  name?: string | null;
+  title?: string | null;
   slug: string;
-  category: SanityProductCategory;
-  brand: string;
-  condition: SanityProductCondition;
-  priceRWF: number;
-  inStock: boolean;
-  featured: boolean;
-  shortDesc: string;
-  description: string;
+  category?: SanityProductCategory | string | SanityCategoryReference | null;
+  categorySlug?: string | null;
+  categoryTitle?: string | null;
+  brand?: string | null;
+  condition?: SanityProductCondition | null;
+  price?: number | null;
+  priceRWF?: number | null;
+  inStock?: boolean | null;
+  featured?: boolean | null;
+  shortDesc?: string | null;
+  description?: string | null;
   specs?: string[] | null;
+  mainImage?: SanityProductImage | null;
+  gallery?: SanityProductImage[] | null;
   images?: SanityProductImage[] | null;
 }
 
@@ -192,6 +229,19 @@ const CATEGORY_ROUTE_ALIAS: Record<string, string> = {
   iphone: "iphone",
 };
 
+const CATEGORY_TITLE_ALIAS: Record<SanityProductCategory, string[]> = {
+  camera: ["camera", "cameras"],
+  lens: ["lens", "lenses"],
+  lighting: ["lighting", "light", "lights"],
+  gimbal: ["gimbal", "gimbals"],
+  tripod: ["tripod", "tripods", "stand", "stands"],
+  stand: ["stand", "stands", "tripod", "tripods"],
+  recorder: ["recorder", "recorders"],
+  laptop: ["laptop"],
+  macbook: ["macbook", "mac book"],
+  iphone: ["iphone", "i phone"],
+};
+
 const CATEGORY_LABEL_BY_ROUTE: Record<string, string> = {
   camera: "Cameras",
   lens: "Lenses",
@@ -232,6 +282,59 @@ const mapSpecs = (specs?: string[] | null) => {
     });
 };
 
+const resolveConditionValue = (
+  condition?: SanityProductCondition | string | null,
+) => {
+  if (typeof condition !== "string") {
+    return "New";
+  }
+
+  const normalized = condition.trim().toLowerCase();
+  if (normalized === "used") {
+    return "Used";
+  }
+
+  return "New";
+};
+
+const resolveCategoryValue = (product: SanityProductDocument) => {
+  const candidates = [
+    typeof product.category === "string" ? product.category : null,
+    product.categorySlug,
+    product.categoryTitle,
+    typeof product.category === "object" && product.category?._ref
+      ? product.category._ref
+      : null,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string" || candidate.trim().length === 0) {
+      continue;
+    }
+
+    const normalized = candidate.trim().toLowerCase();
+    const refValue = normalized.startsWith("category.")
+      ? normalized.split(".").pop() ?? normalized
+      : normalized;
+    const compactValue = refValue.replace(/\s+/g, "-");
+    const alias =
+      CATEGORY_ROUTE_ALIAS[refValue] ??
+      CATEGORY_ROUTE_ALIAS[compactValue] ??
+      CATEGORY_ROUTE_ALIAS[compactValue.replace(/-/g, "")];
+
+    if (!alias) {
+      continue;
+    }
+
+    const sanityCategory = alias === "tripods" ? "tripod" : alias;
+    if (sanityCategory in SANITY_CATEGORY_LABELS) {
+      return sanityCategory as SanityProductCategory;
+    }
+  }
+
+  return null;
+};
+
 const resolveSanityImageUrl = (
   image: SanityProductImage | null | undefined,
   width: number,
@@ -249,15 +352,23 @@ const resolveSanityImageUrl = (
     .url();
 };
 
-const mapImages = (slug: string, images?: SanityProductImage[] | null) => {
+const mapImages = (
+  slug: string,
+  mainImage?: SanityProductImage | null,
+  gallery?: SanityProductImage[] | null,
+  images?: SanityProductImage[] | null,
+) => {
+  const safeGallery = Array.isArray(gallery) ? gallery : [];
   const safeImages = Array.isArray(images) ? images : [];
 
-  const resolved = safeImages
-    .map((image) => resolveSanityImageUrl(image, 1600))
-    .filter((image): image is string => Boolean(image));
+  const resolved = [
+    resolveSanityImageUrl(mainImage, 1600),
+    ...safeGallery.map((image) => resolveSanityImageUrl(image, 1600)),
+    ...safeImages.map((image) => resolveSanityImageUrl(image, 1600)),
+  ].filter((image): image is string => Boolean(image));
 
   if (resolved.length > 0) {
-    return resolved;
+    return Array.from(new Set(resolved));
   }
 
   const mappedLocalImages = getKnownProductImages(slug);
@@ -273,13 +384,20 @@ const normalizeProduct = (
   index: number,
 ): Product | null => {
   const productName =
-    typeof product.name === "string" ? product.name.trim() : "";
+    typeof product.name === "string" && product.name.trim().length > 0
+      ? product.name.trim()
+      : typeof product.title === "string"
+        ? product.title.trim()
+        : "";
   const productSlug =
     typeof product.slug === "string" ? product.slug.trim() : "";
-  const category = SANITY_CATEGORY_LABELS[product.category];
-  const condition = SANITY_CONDITION_LABELS[product.condition];
+  const resolvedCategory = resolveCategoryValue(product);
+  const category = resolvedCategory
+    ? SANITY_CATEGORY_LABELS[resolvedCategory]
+    : null;
+  const condition = resolveConditionValue(product.condition);
 
-  if (!productName || !productSlug || !category || !condition) {
+  if (!productName || !productSlug || !category) {
     return null;
   }
 
@@ -296,12 +414,17 @@ const normalizeProduct = (
     category,
     brand: product.brand?.trim() || "Unknown",
     condition,
-    priceRWF: Number(product.priceRWF) || 0,
+    priceRWF: Number(product.priceRWF ?? product.price) || 0,
     inStock: Boolean(product.inStock),
     shortDesc: product.shortDesc?.trim() || "",
     description: product.description?.trim() || "",
     specs: mapSpecs(product.specs),
-    images: mapImages(productSlug, product.images),
+    images: mapImages(
+      productSlug,
+      product.mainImage,
+      product.gallery,
+      product.images,
+    ),
     featured: Boolean(product.featured),
   };
 };
@@ -570,7 +693,13 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
 
   const sanityProducts = await runQuery<SanityProductDocument[]>(
     PRODUCTS_BY_CATEGORY_QUERY,
-    { categories: sanityCategories },
+    {
+      categories: sanityCategories,
+      categoryRefs: sanityCategories.map((category) => `category.${category}`),
+      categoryTitles: sanityCategories.flatMap(
+        (category) => CATEGORY_TITLE_ALIAS[category] ?? [category],
+      ),
+    },
   );
 
   if (!sanityProducts) {

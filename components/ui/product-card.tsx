@@ -24,7 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
           alt={product.name}
           width={900}
           height={680}
-          className="h-52 w-full bg-white object-cover"
+          className="h-52 w-full bg-white object-contain p-3"
         />
       </Link>
 

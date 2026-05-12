@@ -1,6 +1,6 @@
-# OfficialHope E-commerce Template
+# OfficialHopeStore E-commerce Template
 
-Professional, responsive dark-mode e-commerce template for **OfficialHope** (`officialhope.com`) built with **Next.js App Router + TypeScript + Tailwind CSS**.
+Professional, responsive e-commerce template for **OfficialHopeStore** (`officialhopestore.com`) built with **Next.js App Router + TypeScript + Tailwind CSS**.
 
 ## Run locally
 
@@ -161,7 +161,7 @@ Every product has a WhatsApp purchase action using Rwanda format:
 
 Prefilled message format:
 
-> Hello OfficialHope, I want to buy: {Product Name} - {Price} RWF. Qty: 1. Link: https://officialhope.com/product/{slug}. Delivery location: ____
+> Hello OfficialHopeStore, I want to buy: {Product Name} - {Price} RWF. Qty: 1. Link: https://officialhopestore.com/product/{slug}. Delivery location: ____
 
 ## Brand and filter maintenance
 

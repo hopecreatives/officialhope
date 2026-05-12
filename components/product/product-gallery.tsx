@@ -23,7 +23,7 @@ export function ProductGallery({ name, images }: ProductGalleryProps) {
           alt={`${name} image ${activeIndex + 1}`}
           width={1200}
           height={900}
-          className="h-[320px] w-full bg-white object-cover md:h-[520px]"
+          className="h-[320px] w-full bg-white object-contain p-4 md:h-[520px]"
           priority
         />
       </div>
@@ -46,7 +46,7 @@ export function ProductGallery({ name, images }: ProductGalleryProps) {
               alt={`${name} thumbnail ${index + 1}`}
               width={320}
               height={220}
-              className="h-20 w-full bg-white object-cover"
+              className="h-20 w-full bg-white object-contain p-1"
             />
           </button>
         ))}
