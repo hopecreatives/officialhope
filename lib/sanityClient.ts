@@ -118,6 +118,12 @@ const TEMPLATE_PRODUCT_OVERRIDE_PROJECTION = `{
   }
 }`;
 const TEMPLATE_PRODUCT_OVERRIDES_QUERY = `*[_type == "templateProduct" && defined(templateSlug)] | order(_updatedAt desc) ${TEMPLATE_PRODUCT_OVERRIDE_PROJECTION}`;
+const PRODUCT_ASSET_IMAGES_QUERY = `*[_type == "sanity.imageAsset" && defined(originalFilename) && defined(url)] | order(_createdAt asc) {
+  _id,
+  _createdAt,
+  originalFilename,
+  url
+}`;
 const CATEGORY_PROJECTION = `{
   _id,
   title,
@@ -194,6 +200,13 @@ interface SanityTemplateProductDocument {
   images?: SanityProductImage[] | null;
 }
 
+interface SanityImageAssetDocument {
+  _id: string;
+  _createdAt: string;
+  originalFilename?: string | null;
+  url?: string | null;
+}
+
 interface TemplateProductOverride {
   templateSlug: string;
   name?: string;
@@ -257,6 +270,36 @@ const CATEGORY_LABEL_BY_ROUTE: Record<string, string> = {
 const FALLBACK_CATEGORY_BY_SLUG = new Map(
   HOME_CATEGORY_STRIP.map((item) => [item.slug, item]),
 );
+
+const PRODUCT_ASSET_FILENAME_MATCHERS: Array<{
+  slug: string;
+  matcher: RegExp;
+}> = [
+  { slug: "sony-a7-iii", matcher: /\bsony[\s-]*a7\s*iii\b|\ba7iii\b/i },
+  { slug: "canon-eos-r6", matcher: /\bcanon\b.*\br6\b|\br6\b/i },
+  { slug: "nikon-z6-ii", matcher: /\bnikon\b.*\bz6[\s-]*ii\b|\bz6ii\b/i },
+  { slug: "sony-fe-24-70-gm-ii", matcher: /\bsel2470gm2\b|\b24[\s-]*70\b.*\bgm\b/i },
+  { slug: "canon-rf-50mm-f1-8", matcher: /\bcanon\b.*\brf\b.*\b50mm\b|\brf[_\s-]*50mm/i },
+  { slug: "nikon-z-70-200-f2-8-vr-s", matcher: /\bnikon\b.*\b70[\s-]*200\b|\b70[\s-]*200\b.*\bvr\b/i },
+  { slug: "dji-rs-4-mini", matcher: /\brs[\s-]*4\b|\brender\s*7\b/i },
+  { slug: "zhiyun-weebill-s", matcher: /\bweebill\b|\bzhiyun\b/i },
+  { slug: "dji-osmo-mobile-6", matcher: /\bosmo\b|\bmobile[\s-]*6\b/i },
+  { slug: "godox-sl60w-led-light", matcher: /\bgodox\b|\bsl60\b/i },
+  { slug: "aputure-amaran-200x-s", matcher: /\bamaran\b|\b200x\b/i },
+  { slug: "nanlite-forza-60b-ii", matcher: /\bnanlite\b|\bforza[\s-]*60b\b/i },
+  { slug: "manfrotto-befree-live-tripod", matcher: /\bmanfrotto\b|\bbefree\b/i },
+  { slug: "neewer-c-stand-kit", matcher: /\bneewer\b|\bc-stand\b|\bcstand\b/i },
+  { slug: "kf-concept-heavy-duty-light-stand", matcher: /\bk&f\b|\bkf[\s-]*concept\b|51sxyqy3sgl|1b27a3c/i },
+  { slug: "zoom-h6-essential-recorder", matcher: /\bzoom\b|\bh6essential\b|\bh6[\s-]*essential\b/i },
+  { slug: "rode-wireless-go-ii", matcher: /\brode\b|\bwireless[\s-]*go\b/i },
+  { slug: "tascam-dr-40x", matcher: /\btascam\b|\bdr[\s-]*40x\b/i },
+  { slug: "macbook-pro-14-m3-pro", matcher: /\bm3\b.*\b14\b|\b14[\s-]*inch\b.*\bm3\b/i },
+  { slug: "macbook-air-m2", matcher: /\bm2\b.*\b13\b|\b13inch\b|\bm2 13/i },
+  { slug: "macbook-pro-16-m2-max", matcher: /\bm2\b.*\b16\b|\b16inch\b|\bm2 16/i },
+  { slug: "iphone-15-pro", matcher: /\biphone[\s-]*15\b/i },
+  { slug: "iphone-14-128gb", matcher: /\biphone[\s-]*14\b/i },
+  { slug: "iphone-13-pro-256gb", matcher: /\biphone[\s-]*13\b/i },
+];
 
 const mapSpecs = (specs?: string[] | null) => {
   const safeSpecs = Array.isArray(specs) ? specs : [];
@@ -472,6 +515,80 @@ const mapTemplateOverrideImages = (images?: SanityProductImage[] | null) => {
   return resolved.length > 0 ? resolved : undefined;
 };
 
+const formatSanityAssetUrl = (url: string) => {
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) {
+    return "";
+  }
+
+  const separator = trimmedUrl.includes("?") ? "&" : "?";
+  return `${trimmedUrl}${separator}w=1600&q=86&fit=max&auto=format`;
+};
+
+const normalizeAssetFilename = (filename?: string | null) =>
+  typeof filename === "string"
+    ? filename
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    : "";
+
+const mapAssetImagesBySlug = (assets: SanityImageAssetDocument[]) => {
+  const bySlug = new Map<string, string[]>();
+
+  for (const asset of assets) {
+    const filename = normalizeAssetFilename(asset.originalFilename);
+    const url =
+      typeof asset.url === "string" ? formatSanityAssetUrl(asset.url) : "";
+
+    if (!filename || !url) {
+      continue;
+    }
+
+    const match = PRODUCT_ASSET_FILENAME_MATCHERS.find(({ matcher }) =>
+      matcher.test(filename),
+    );
+
+    if (!match) {
+      continue;
+    }
+
+    const images = bySlug.get(match.slug) ?? [];
+    if (!images.includes(url)) {
+      images.push(url);
+    }
+
+    bySlug.set(match.slug, images);
+  }
+
+  return bySlug;
+};
+
+const applySanityAssetImages = (
+  products: Product[],
+  assetImagesMap: Map<string, string[]>,
+) => {
+  if (assetImagesMap.size === 0) {
+    return products;
+  }
+
+  return products.map((product) => {
+    const canonicalSlug = getCanonicalProductSlug(product.slug);
+    const images = assetImagesMap.get(canonicalSlug);
+
+    if (!images || images.length === 0) {
+      return product;
+    }
+
+    return {
+      ...product,
+      images,
+    };
+  });
+};
+
 const normalizeTemplateProductOverride = (
   document: SanityTemplateProductDocument,
 ): TemplateProductOverride | null => {
@@ -660,31 +777,52 @@ const getTemplateProductOverridesMap = async () => {
   return bySlug;
 };
 
+const getSanityAssetImagesMap = async () => {
+  const documents = await runQuery<SanityImageAssetDocument[]>(
+    PRODUCT_ASSET_IMAGES_QUERY,
+  );
+
+  if (!Array.isArray(documents) || documents.length === 0) {
+    return new Map<string, string[]>();
+  }
+
+  return mapAssetImagesBySlug(documents);
+};
+
 export async function getAllProducts(): Promise<Product[]> {
   const templateOverrideMap = await getTemplateProductOverridesMap();
+  const assetImagesMap = await getSanityAssetImagesMap();
+  const assetBackedFallbackProducts = applySanityAssetImages(
+    fallbackProducts,
+    assetImagesMap,
+  );
   const sanityProducts = await runQuery<SanityProductDocument[]>(ALL_PRODUCTS_QUERY);
 
   if (!sanityProducts) {
-    return applyTemplateOverrides(fallbackProducts, templateOverrideMap);
+    return applyTemplateOverrides(assetBackedFallbackProducts, templateOverrideMap);
   }
 
   const normalized = normalizeProducts(sanityProducts);
   if (normalized.length === 0) {
-    return applyTemplateOverrides(fallbackProducts, templateOverrideMap);
+    return applyTemplateOverrides(assetBackedFallbackProducts, templateOverrideMap);
   }
 
   return applyTemplateOverrides(
-    mergeProductsBySlug(normalized, fallbackProducts),
+    mergeProductsBySlug(normalized, assetBackedFallbackProducts),
     templateOverrideMap,
   );
 }
 
 export async function getProductsByCategory(slug: string): Promise<Product[]> {
   const templateOverrideMap = await getTemplateProductOverridesMap();
+  const assetImagesMap = await getSanityAssetImagesMap();
   const sanityCategories = getSanityCategoryValuesForSlug(slug);
   const fallbackCategoryProducts = (() => {
     const categories = getCategoryNavCategories(slug);
-    return fallbackProducts.filter((product) => categories.includes(product.category));
+    return applySanityAssetImages(
+      fallbackProducts.filter((product) => categories.includes(product.category)),
+      assetImagesMap,
+    );
   })();
 
   if (sanityCategories.length === 0) {
@@ -744,6 +882,7 @@ export async function getHomeCategories(): Promise<HomeCategoryStripItem[]> {
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   const templateOverrideMap = await getTemplateProductOverridesMap();
+  const assetImagesMap = await getSanityAssetImagesMap();
   const sanityProduct = await runQuery<SanityProductDocument | null>(
     PRODUCT_BY_SLUG_QUERY,
     { slug },
@@ -756,7 +895,12 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       return null;
     }
 
-    return applyTemplateOverrides([fallbackProduct], templateOverrideMap)[0] ?? null;
+    return (
+      applyTemplateOverrides(
+        applySanityAssetImages([fallbackProduct], assetImagesMap),
+        templateOverrideMap,
+      )[0] ?? null
+    );
   }
 
   const normalized = normalizeProduct(sanityProduct, 0);
